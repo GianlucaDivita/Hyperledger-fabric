@@ -440,17 +440,12 @@ let Chaincode = class {
 
     const { iterator, metadata } = await stub.getStateByRangeWithPagination(startKey, endKey, pageSize, bookmark);
     const getAllResults = thisClass['getAllResults'];
-
-    let results = {};
-
-    results.results = await getAllResults(iterator, false);
-
+    const results = await getAllResults(iterator, false);
     // use RecordsCount and Bookmark to keep consistency with the go sample
     results.ResponseMetadata = {
-      RecordsCount: metadata.fetchedRecordsCount,
+      RecordsCount: metadata.fetched_records_count,
       Bookmark: metadata.bookmark,
     };
-
     return Buffer.from(JSON.stringify(results));
   }
 
@@ -472,13 +467,10 @@ let Chaincode = class {
 
     const { iterator, metadata } = await stub.getQueryResultWithPagination(queryString, pageSize, bookmark);
     const getAllResults = thisClass['getAllResults'];
-    let results = {};
-
-    results.results = await getAllResults(iterator, false);
-
+    const results = await getAllResults(iterator, false);
     // use RecordsCount and Bookmark to keep consistency with the go sample
     results.ResponseMetadata = {
-      RecordsCount: metadata.fetchedRecordsCount,
+      RecordsCount: metadata.fetched_records_count,
       Bookmark: metadata.bookmark,
     };
 

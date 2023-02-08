@@ -1,10 +1,8 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
  */
-// Deterministic JSON.stringify()
+
 import {Context, Contract, Info, Returns, Transaction} from 'fabric-contract-api';
-import stringify from 'json-stringify-deterministic';
-import sortKeysRecursive from 'sort-keys-recursive';
 import {Asset} from './asset';
 
 @Info({title: 'AssetTransfer', description: 'Smart contract for trading assets'})
@@ -59,11 +57,7 @@ export class AssetTransferContract extends Contract {
 
         for (const asset of assets) {
             asset.docType = 'asset';
-            // example of how to write to world state deterministically
-            // use convetion of alphabetic order
-            // we insert data in alphabetic order using 'json-stringify-deterministic' and 'sort-keys-recursive'
-            // when retrieving data, in any lang, the order of data will be the same and consequently also the corresonding hash
-            await ctx.stub.putState(asset.ID, Buffer.from(stringify(sortKeysRecursive(asset))));
+            await ctx.stub.putState(asset.ID, Buffer.from(JSON.stringify(asset)));
             console.info(`Asset ${asset.ID} initialized`);
         }
     }
@@ -71,11 +65,6 @@ export class AssetTransferContract extends Contract {
     // CreateAsset issues a new asset to the world state with given details.
     @Transaction()
     public async CreateAsset(ctx: Context, id: string, color: string, size: number, owner: string, appraisedValue: number): Promise<void> {
-        const exists = await this.AssetExists(ctx, id);
-        if (exists) {
-            throw new Error(`The asset ${id} already exists`);
-        }
-
         const asset = {
             ID: id,
             Color: color,
@@ -83,8 +72,7 @@ export class AssetTransferContract extends Contract {
             Owner: owner,
             AppraisedValue: appraisedValue,
         };
-        // we insert data in alphabetic order using 'json-stringify-deterministic' and 'sort-keys-recursive'
-        await ctx.stub.putState(id, Buffer.from(stringify(sortKeysRecursive(asset))));
+        await ctx.stub.putState(id, Buffer.from(JSON.stringify(asset)));
     }
 
     // ReadAsset returns the asset stored in the world state with given id.
@@ -113,8 +101,7 @@ export class AssetTransferContract extends Contract {
             Owner: owner,
             AppraisedValue: appraisedValue,
         };
-        // we insert data in alphabetic order using 'json-stringify-deterministic' and 'sort-keys-recursive'
-        return ctx.stub.putState(id, Buffer.from(stringify(sortKeysRecursive(updatedAsset))));
+        return ctx.stub.putState(id, Buffer.from(JSON.stringify(updatedAsset)));
     }
 
     // DeleteAsset deletes an given asset from the world state.
@@ -135,16 +122,13 @@ export class AssetTransferContract extends Contract {
         return assetJSON && assetJSON.length > 0;
     }
 
-    // TransferAsset updates the owner field of asset with given id in the world state, and returns the old owner.
+    // TransferAsset updates the owner field of asset with given id in the world state.
     @Transaction()
-    public async TransferAsset(ctx: Context, id: string, newOwner: string): Promise<string> {
+    public async TransferAsset(ctx: Context, id: string, newOwner: string): Promise<void> {
         const assetString = await this.ReadAsset(ctx, id);
         const asset = JSON.parse(assetString);
-        const oldOwner = asset.Owner;
         asset.Owner = newOwner;
-        // we insert data in alphabetic order using 'json-stringify-deterministic' and 'sort-keys-recursive'
-        await ctx.stub.putState(id, Buffer.from(stringify(sortKeysRecursive(asset))));
-        return oldOwner;
+        await ctx.stub.putState(id, Buffer.from(JSON.stringify(asset)));
     }
 
     // GetAllAssets returns all assets found in the world state.
@@ -164,7 +148,7 @@ export class AssetTransferContract extends Contract {
                 console.log(err);
                 record = strValue;
             }
-            allResults.push(record);
+            allResults.push({Key: result.value.key, Record: record});
             result = await iterator.next();
         }
         return JSON.stringify(allResults);

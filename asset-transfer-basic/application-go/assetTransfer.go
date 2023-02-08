@@ -8,6 +8,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -21,7 +22,7 @@ func main() {
 
 	err := os.Setenv("DISCOVERY_AS_LOCALHOST", "true")
 	if err != nil {
-		log.Fatalf("Error setting DISCOVERY_AS_LOCALHOST environment variable: %v", err)
+		log.Fatalf("Error setting DISCOVERY_AS_LOCALHOST environemnt variable: %v", err)
 	}
 
 	wallet, err := gateway.NewFileSystemWallet("wallet")
@@ -55,24 +56,12 @@ func main() {
 	}
 	defer gw.Close()
 
-    channelName := "mychannel"
-    if cname := os.Getenv("CHANNEL_NAME"); cname != "" {
-        channelName = cname
-    }
-
-    log.Println("--> Connecting to channel", channelName)
-	network, err := gw.GetNetwork(channelName)
+	network, err := gw.GetNetwork("mychannel")
 	if err != nil {
 		log.Fatalf("Failed to get network: %v", err)
 	}
 
-    chaincodeName := "basic"
-    if ccname := os.Getenv("CHAINCODE_NAME"); ccname != "" {
-        chaincodeName = ccname
-    }
-
-    log.Println("--> Using chaincode", chaincodeName)
-	contract := network.GetContract(chaincodeName)
+	contract := network.GetContract("basic")
 
 	log.Println("--> Submit Transaction: InitLedger, function creates the initial set of assets on the ledger")
 	result, err := contract.SubmitTransaction("InitLedger")
@@ -140,14 +129,14 @@ func populateWallet(wallet *gateway.Wallet) error {
 
 	certPath := filepath.Join(credPath, "signcerts", "cert.pem")
 	// read the certificate pem
-	cert, err := os.ReadFile(filepath.Clean(certPath))
+	cert, err := ioutil.ReadFile(filepath.Clean(certPath))
 	if err != nil {
 		return err
 	}
 
 	keyDir := filepath.Join(credPath, "keystore")
 	// there's a single file in this dir containing the private key
-	files, err := os.ReadDir(keyDir)
+	files, err := ioutil.ReadDir(keyDir)
 	if err != nil {
 		return err
 	}
@@ -155,7 +144,7 @@ func populateWallet(wallet *gateway.Wallet) error {
 		return fmt.Errorf("keystore folder should have contain one file")
 	}
 	keyPath := filepath.Join(keyDir, files[0].Name())
-	key, err := os.ReadFile(filepath.Clean(keyPath))
+	key, err := ioutil.ReadFile(filepath.Clean(keyPath))
 	if err != nil {
 		return err
 	}

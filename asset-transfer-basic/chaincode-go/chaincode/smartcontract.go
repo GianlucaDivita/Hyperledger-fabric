@@ -13,14 +13,12 @@ type SmartContract struct {
 }
 
 // Asset describes basic details of what makes up a simple asset
-// Insert struct field in alphabetic order => to achieve determinism across languages
-// golang keeps the order when marshal to json but doesn't order automatically
 type Asset struct {
-	AppraisedValue int    `json:"AppraisedValue"`
-	Color          string `json:"Color"`
 	ID             string `json:"ID"`
-	Owner          string `json:"Owner"`
-	Size           int    `json:"Size"`
+	Color          string `json:"color"`
+	Size           int    `json:"size"`
+	Owner          string `json:"owner"`
+	AppraisedValue int    `json:"appraisedValue"`
 }
 
 // InitLedger adds a base set of assets to the ledger
@@ -142,27 +140,20 @@ func (s *SmartContract) AssetExists(ctx contractapi.TransactionContextInterface,
 	return assetJSON != nil, nil
 }
 
-// TransferAsset updates the owner field of asset with given id in world state, and returns the old owner.
-func (s *SmartContract) TransferAsset(ctx contractapi.TransactionContextInterface, id string, newOwner string) (string, error) {
+// TransferAsset updates the owner field of asset with given id in world state.
+func (s *SmartContract) TransferAsset(ctx contractapi.TransactionContextInterface, id string, newOwner string) error {
 	asset, err := s.ReadAsset(ctx, id)
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	oldOwner := asset.Owner
 	asset.Owner = newOwner
-
 	assetJSON, err := json.Marshal(asset)
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	err = ctx.GetStub().PutState(id, assetJSON)
-	if err != nil {
-		return "", err
-	}
-
-	return oldOwner, nil
+	return ctx.GetStub().PutState(id, assetJSON)
 }
 
 // GetAllAssets returns all assets found in world state

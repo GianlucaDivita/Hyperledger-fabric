@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// Running TestApp:
-// gradle runApp
+// Running TestApp: 
+// gradle runApp 
 
 package application.java;
 
@@ -65,7 +65,7 @@ public class App {
 
 			System.out.println("\n");
 			System.out.println("Submit Transaction: CreateAsset asset13");
-			// CreateAsset creates an asset with ID asset13, color yellow, owner Tom, size 5 and appraisedValue of 1300
+			//CreateAsset creates an asset with ID asset13, color yellow, owner Tom, size 5 and appraisedValue of 1300
 			contract.submitTransaction("CreateAsset", "asset13", "yellow", "5", "Tom", "1300");
 
 			System.out.println("\n");
@@ -128,7 +128,7 @@ public class App {
 			result = contract.evaluateTransaction("QueryAssets","{\"selector\":{\"docType\":\"asset\",\"owner\":\"Jin Soo\"}, \"use_index\":[\"_design/indexOwnerDoc\", \"indexOwner\"]}");
 			System.out.println("result: " + new String(result));
 
-			// Range Query with Pagination
+			// Rich Query with Pagination (Only supported if CouchDB is used as state database)
 			System.out.println("\n");
 			System.out.println("Evaluate Transaction:GetAssetsByRangeWithPagination assets 3-5");
 			result = contract.evaluateTransaction("GetAssetsByRangeWithPagination", "asset3", "asset6", "3","");

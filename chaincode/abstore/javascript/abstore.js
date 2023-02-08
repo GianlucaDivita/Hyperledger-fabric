@@ -25,7 +25,7 @@ var ABstore = class {
     let Aval = args[1];
     let Bval = args[3];
 
-    if (isNaN(parseInt(Aval)) || isNaN(parseInt(Bval))) {
+    if (typeof parseInt(Aval) !== 'number' || typeof parseInt(Bval) !== 'number') {
       return shim.error('Expecting integer value for asset holding');
     }
 

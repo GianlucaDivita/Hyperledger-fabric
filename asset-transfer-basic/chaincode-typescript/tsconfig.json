@@ -6,7 +6,6 @@
         "target": "es2017",
         "moduleResolution": "node",
         "module": "commonjs",
-        "esModuleInterop": true,
         "declaration": true,
         "sourceMap": true
     },

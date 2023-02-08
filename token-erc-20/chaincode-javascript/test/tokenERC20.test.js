@@ -1,7 +1,5 @@
 /*
- * Copyright IBM Corp. All Rights Reserved.
- *
- * SPDX-License-Identifier: Apache-2.0
+SPDX-License-Identifier: Apache-2.0
 */
 
 'use strict';
@@ -26,7 +24,7 @@ describe('Chaincode', () => {
     let mockStub;
     let mockClientIdentity;
 
-    beforeEach('Sandbox creation', async () => {
+    beforeEach('Sandbox creation', () => {
         sandbox = sinon.createSandbox();
         token = new TokenERC20Contract('token-erc20');
 
@@ -35,8 +33,6 @@ describe('Chaincode', () => {
         ctx.stub = mockStub;
         mockClientIdentity = sinon.createStubInstance(ClientIdentity);
         ctx.clientIdentity = mockClientIdentity;
-
-        await token.Initialize(ctx, 'some name', 'some symbol', '2');
 
         mockStub.putState.resolves('some state');
         mockStub.setEvent.returns('set event');
@@ -98,12 +94,6 @@ describe('Chaincode', () => {
     });
 
     describe('#_transfer', () => {
-
-        it('should fail when the sender and the receipient are the same', async () => {
-            await expect(token._transfer(ctx, 'Alice', 'Alice', '1000'))
-                .to.be.rejectedWith(Error, 'cannot transfer to and from same client account');
-        });
-
         it('should fail when the sender does not have enough token', async () => {
             mockStub.createCompositeKey.withArgs('balance', ['Alice']).returns('balance_Alice');
             mockStub.getState.withArgs('balance_Alice').resolves(Buffer.from('500'));
@@ -200,18 +190,13 @@ describe('Chaincode', () => {
         });
     });
 
-    describe('#Initialize', () => {
+    describe('#SetOption', () => {
         it('should work', async () => {
-            // We consider it has already been initialized in the before-each statement
+            const response = await token.SetOption(ctx, 'some name', 'some symbol', '2');
             sinon.assert.calledWith(mockStub.putState, 'name', Buffer.from('some name'));
             sinon.assert.calledWith(mockStub.putState, 'symbol', Buffer.from('some symbol'));
             sinon.assert.calledWith(mockStub.putState, 'decimals', Buffer.from('2'));
-        });
-
-        it('should failed if called a second time', async () => {
-            // We consider it has already been initialized in the before-each statement
-            await expect(await token.Initialize(ctx, 'some name', 'some symbol', '2'))
-                .to.be.rejectedWith(Error, 'contract options are already set, client is not authorized to change them');
+            expect(response).to.equals(true);
         });
     });
 

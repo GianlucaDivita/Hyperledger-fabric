@@ -36,17 +36,12 @@ You can use the test network script to deploy the ERC-20 token contract to the c
 ./network.sh deployCC -ccn token_erc20 -ccp ../token-erc-20/chaincode-go/ -ccl go
 ```
 
-**For a Java Contract:**
-```
-./network.sh deployCC -ccn token_erc20 -ccp ../token-erc-20/chaincode-java/ -ccl java
-```
-
 **For a JavaScript Contract:**
 ```
 ./network.sh deployCC -ccn token_erc20 -ccp ../token-erc-20/chaincode-javascript/ -ccl javascript
 ```
 
-The above commands deploys the chaincode with short name `token_erc20`. The smart contract will use the default endorsement policy of majority of channel members.
+The above command deploys the go chaincode with short name `token_erc20`. The smart contract will use the default endorsement policy of majority of channel members.
 Since the channel has two members, this implies that we'll need to get peer endorsements from 2 out of the 2 channel members.
 
 Now you are ready to call the deployed smart contract via peer CLI calls. But let's first create the client identities for our scenario.
@@ -68,17 +63,17 @@ export FABRIC_CA_CLIENT_HOME=${PWD}/organizations/peerOrganizations/org1.example
 
 You can register a new minter client identity using the `fabric-ca-client` tool:
 ```
-fabric-ca-client register --caname ca-org1 --id.name minter --id.secret minterpw --id.type client --tls.certfiles "${PWD}/organizations/fabric-ca/org1/tls-cert.pem"
+fabric-ca-client register --caname ca-org1 --id.name minter --id.secret minterpw --id.type client --tls.certfiles ${PWD}/organizations/fabric-ca/org1/tls-cert.pem
 ```
 
 You can now generate the identity certificates and MSP folder by providing the minter's enroll name and secret to the enroll command:
 ```
-fabric-ca-client enroll -u https://minter:minterpw@localhost:7054 --caname ca-org1 -M "${PWD}/organizations/peerOrganizations/org1.example.com/users/minter@org1.example.com/msp" --tls.certfiles "${PWD}/organizations/fabric-ca/org1/tls-cert.pem"
+fabric-ca-client enroll -u https://minter:minterpw@localhost:7054 --caname ca-org1 -M ${PWD}/organizations/peerOrganizations/org1.example.com/users/minter@org1.example.com/msp --tls.certfiles ${PWD}/organizations/fabric-ca/org1/tls-cert.pem
 ```
 
 Run the command below to copy the Node OU configuration file into the minter identity MSP folder.
 ```
-cp "${PWD}/organizations/peerOrganizations/org1.example.com/msp/config.yaml" "${PWD}/organizations/peerOrganizations/org1.example.com/users/minter@org1.example.com/msp/config.yaml"
+cp ${PWD}/organizations/peerOrganizations/org1.example.com/msp/config.yaml ${PWD}/organizations/peerOrganizations/org1.example.com/users/minter@org1.example.com/msp/config.yaml
 ```
 
 Open a new terminal to represent Org2 and navigate to fabric-samples/test-network. We'll use the Org2 CA to create the Org2 recipient identity. Set the Fabric CA client home to the MSP of the Org2 CA admin:
@@ -90,23 +85,22 @@ export FABRIC_CA_CLIENT_HOME=${PWD}/organizations/peerOrganizations/org2.example
 
 You can register a recipient client identity using the `fabric-ca-client` tool:
 ```
-fabric-ca-client register --caname ca-org2 --id.name recipient --id.secret recipientpw --id.type client --tls.certfiles "${PWD}/organizations/fabric-ca/org2/tls-cert.pem"
+fabric-ca-client register --caname ca-org2 --id.name recipient --id.secret recipientpw --id.type client --tls.certfiles ${PWD}/organizations/fabric-ca/org2/tls-cert.pem
 ```
 
 We can now enroll to generate the recipient's identity certificates and MSP folder:
 ```
-fabric-ca-client enroll -u https://recipient:recipientpw@localhost:8054 --caname ca-org2 -M "${PWD}/organizations/peerOrganizations/org2.example.com/users/recipient@org2.example.com/msp" --tls.certfiles "${PWD}/organizations/fabric-ca/org2/tls-cert.pem"
+fabric-ca-client enroll -u https://recipient:recipientpw@localhost:8054 --caname ca-org2 -M ${PWD}/organizations/peerOrganizations/org2.example.com/users/recipient@org2.example.com/msp --tls.certfiles ${PWD}/organizations/fabric-ca/org2/tls-cert.pem
 ```
 
 Run the command below to copy the Node OU configuration file into the recipient identity MSP folder.
 ```
-cp "${PWD}/organizations/peerOrganizations/org2.example.com/msp/config.yaml" "${PWD}/organizations/peerOrganizations/org2.example.com/users/recipient@org2.example.com/msp/config.yaml"
+cp ${PWD}/organizations/peerOrganizations/org2.example.com/msp/config.yaml ${PWD}/organizations/peerOrganizations/org2.example.com/users/recipient@org2.example.com/msp/config.yaml
 ```
 
-## Initialize the contract
-Once we created the identity of the minter we can now initialize the contract.
-Note that we need to call the initialize function before being able to use any functions of the contract. Initialize() can be called only once.
+## Mint some tokens
 
+Now that we have created the identity of the minter, we can invoke the smart contract to mint some tokens.
 Shift back to the Org1 terminal, we'll set the following environment variables to operate the `peer` CLI as the minter identity from Org1.
 ```
 export CORE_PEER_TLS_ENABLED=true
@@ -114,23 +108,14 @@ export CORE_PEER_LOCALMSPID="Org1MSP"
 export CORE_PEER_MSPCONFIGPATH=${PWD}/organizations/peerOrganizations/org1.example.com/users/minter@org1.example.com/msp
 export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
 export CORE_PEER_ADDRESS=localhost:7051
-export TARGET_TLS_OPTIONS=(-o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile "${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" --peerAddresses localhost:7051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt" --peerAddresses localhost:9051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt")
+export TARGET_TLS_OPTIONS="-o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile ${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem --peerAddresses localhost:7051 --tlsRootCertFiles ${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt --peerAddresses localhost:9051 --tlsRootCertFiles ${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt"
 ```
 
 The last environment variable above will be utilized within the CLI invoke commands to set the target peers for endorsement, and the target ordering service endpoint and TLS options.
 
-We can then invoke the smart contract to initilize it
-```
-peer chaincode invoke "${TARGET_TLS_OPTIONS[@]}" -C mychannel -n token_erc20 -c '{"function":"Initialize","Args":["some name", "some symbol", "2"]}'
-```
-
-## Mint some tokens
-
-Now that we have initialized the contract and created the identity of the minter, we can invoke the smart contract to mint some tokens.
-
 We can then invoke the smart contract to mint 5000 tokens:
 ```
-peer chaincode invoke "${TARGET_TLS_OPTIONS[@]}" -C mychannel -n token_erc20 -c '{"function":"Mint","Args":["5000"]}'
+peer chaincode invoke $TARGET_TLS_OPTIONS -C mychannel -n token_erc20 -c '{"function":"Mint","Args":["5000"]}'
 ```
 
 The mint function validated that the client is a member of the minter organization, and then credited the minter client's account with 5000 tokens. We can check the minter client's account balance by calling the `ClientAccountBalance` function.
@@ -179,13 +164,6 @@ The result shows that the subject and issuer is indeed the recipient user from O
 x509::CN=recipient,OU=client,O=Hyperledger,ST=North Carolina,C=US::CN=ca.org2.example.com,O=org2.example.com,L=Hursley,ST=Hampshire,C=UK
 ```
 
-**For a Java Contract**
-
-The function returns of recipient's client ID.
-```
-x509::CN=recipient, OU=client, O=Hyperledger, ST=North Carolina, C=US::CN=ca.org2.example.com, O=org2.example.com, L=Hursley, ST=Hampshire, C=UK
-```
-
 **For a JavaScript Contract:**
 
 The function returns of recipient's client ID.
@@ -200,18 +178,13 @@ Back in the Org1 terminal, request the transfer of 100 tokens to the recipient a
 **For a Go Contract:**
 ```
 export RECIPIENT="eDUwOTo6Q049cmVjaXBpZW50LE9VPWNsaWVudCxPPUh5cGVybGVkZ2VyLFNUPU5vcnRoIENhcm9saW5hLEM9VVM6OkNOPWNhLm9yZzIuZXhhbXBsZS5jb20sTz1vcmcyLmV4YW1wbGUuY29tLEw9SHVyc2xleSxTVD1IYW1wc2hpcmUsQz1VSw=="
-peer chaincode invoke "${TARGET_TLS_OPTIONS[@]}" -C mychannel -n token_erc20 -c '{"function":"Transfer","Args":[ "'"$RECIPIENT"'","100"]}'
-```
-***For a Java Contract**
-```
-export RECIPIENT="x509::CN=recipient, OU=client, O=Hyperledger, ST=North Carolina, C=US::CN=ca.org2.example.com, O=org2.example.com, L=Hursley, ST=Hampshire, C=UK"
-peer chaincode invoke "${TARGET_TLS_OPTIONS[@]}" -C mychannel -n token_erc20 -c '{"function":"Transfer","Args":[ "'"$RECIPIENT"'","100"]}'
+peer chaincode invoke $TARGET_TLS_OPTIONS -C mychannel -n token_erc20 -c '{"function":"Transfer","Args":[ "'"$RECIPIENT"'","100"]}'
 ```
 
 **For a JavaScript Contract:**
 ```
 export RECIPIENT="x509::/C=US/ST=North Carolina/O=Hyperledger/OU=client/CN=recipient::/C=UK/ST=Hampshire/L=Hursley/O=org2.example.com/CN=ca.org2.example.com"
-peer chaincode invoke "${TARGET_TLS_OPTIONS[@]}" -C mychannel -n token_erc20 -c '{"function":"Transfer","Args":[ "'"$RECIPIENT"'","100"]}'
+peer chaincode invoke $TARGET_TLS_OPTIONS -C mychannel -n token_erc20 -c '{"function":"Transfer","Args":[ "'"$RECIPIENT"'","100"]}'
 ```
 
 The `Transfer` function validates that the account associated with the calling client ID has sufficient funds for the transfer.
@@ -256,17 +229,17 @@ You have already brought up the network and deployed the smart contract to the c
 We will use the Org1 CA to create the spender identity.
 Back in the Org1 terminal, you can register a new spender client identity using the `fabric-ca-client` tool:
 ```
-fabric-ca-client register --caname ca-org1 --id.name spender --id.secret spenderpw --id.type client --tls.certfiles "${PWD}/organizations/fabric-ca/org1/tls-cert.pem"
+fabric-ca-client register --caname ca-org1 --id.name spender --id.secret spenderpw --id.type client --tls.certfiles ${PWD}/organizations/fabric-ca/org1/tls-cert.pem
 ```
 
 You can now generate the identity certificates and MSP folder by providing the spender's enroll name and secret to the enroll command:
 ```
-fabric-ca-client enroll -u https://spender:spenderpw@localhost:7054 --caname ca-org1 -M "${PWD}/organizations/peerOrganizations/org1.example.com/users/spender@org1.example.com/msp" --tls.certfiles "${PWD}/organizations/fabric-ca/org1/tls-cert.pem"
+fabric-ca-client enroll -u https://spender:spenderpw@localhost:7054 --caname ca-org1 -M ${PWD}/organizations/peerOrganizations/org1.example.com/users/spender@org1.example.com/msp --tls.certfiles ${PWD}/organizations/fabric-ca/org1/tls-cert.pem
 ```
 
 Run the command below to copy the Node OU configuration file into the spender identity MSP folder.
 ```
-cp "${PWD}/organizations/peerOrganizations/org1.example.com/msp/config.yaml" "${PWD}/organizations/peerOrganizations/org1.example.com/users/spender@org1.example.com/msp/config.yaml"
+cp ${PWD}/organizations/peerOrganizations/org1.example.com/msp/config.yaml ${PWD}/organizations/peerOrganizations/org1.example.com/users/spender@org1.example.com/msp/config.yaml
 ```
 
 ## Approve a spender
@@ -283,7 +256,7 @@ export CORE_PEER_LOCALMSPID="Org1MSP"
 export CORE_PEER_MSPCONFIGPATH=${PWD}/organizations/peerOrganizations/org1.example.com/users/spender@org1.example.com/msp
 export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
 export CORE_PEER_ADDRESS=localhost:7051
-export TARGET_TLS_OPTIONS=(-o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile "${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" --peerAddresses localhost:7051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt" --peerAddresses localhost:9051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt")
+export TARGET_TLS_OPTIONS="-o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile ${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem --peerAddresses localhost:7051 --tlsRootCertFiles ${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt --peerAddresses localhost:9051 --tlsRootCertFiles ${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt"
 ```
 
 Now the Org1 spender can retrieve their own client ID:
@@ -296,13 +269,6 @@ peer chaincode query -C mychannel -n token_erc20 -c '{"function":"ClientAccountI
 The function returns of spender's account ID:
 ```
 eDUwOTo6Q049c3BlbmRlcixPVT1jbGllbnQsTz1IeXBlcmxlZGdlcixTVD1Ob3J0aCBDYXJvbGluYSxDPVVTOjpDTj1jYS5vcmcxLmV4YW1wbGUuY29tLE89b3JnMS5leGFtcGxlLmNvbSxMPUR1cmhhbSxTVD1Ob3J0aCBDYXJvbGluYSxDPVVT
-```
-
-**For a Java Contract**
-
-The function returns of spenders's client ID.
-```
-x509::CN=spender, OU=client, O=Hyperledger, ST=North Carolina, C=US::CN=ca.org1.example.com, O=org1.example.com, L=Durham, ST=North Carolina, C=US
 ```
 
 **For a JavaScript Contract:**
@@ -320,21 +286,14 @@ Back in the Org1 minter terminal, request the approval of 500 tokens to be withd
 
 ```
 export SPENDER="eDUwOTo6Q049c3BlbmRlcixPVT1jbGllbnQsTz1IeXBlcmxlZGdlcixTVD1Ob3J0aCBDYXJvbGluYSxDPVVTOjpDTj1jYS5vcmcxLmV4YW1wbGUuY29tLE89b3JnMS5leGFtcGxlLmNvbSxMPUR1cmhhbSxTVD1Ob3J0aCBDYXJvbGluYSxDPVVT"
-peer chaincode invoke "${TARGET_TLS_OPTIONS[@]}" -C mychannel -n token_erc20 -c '{"function":"Approve","Args":[ "'"$SPENDER"'","500"]}'
-```
-
-**For a Java Contract:**
-
-```
-export SPENDER="x509::CN=spender, OU=client, O=Hyperledger, ST=North Carolina, C=US::CN=ca.org1.example.com, O=org1.example.com, L=Durham, ST=North Carolina, C=US"
-peer chaincode invoke "${TARGET_TLS_OPTIONS[@]}" -C mychannel -n token_erc20 -c '{"function":"Approve","Args":["'"$SPENDER"'", "500"]}'
+peer chaincode invoke $TARGET_TLS_OPTIONS -C mychannel -n token_erc20 -c '{"function":"Approve","Args":[ "'"$SPENDER"'","500"]}'
 ```
 
 **For a JavaScript Contract:**
 
 ```
 export SPENDER="x509::/C=US/ST=North Carolina/O=Hyperledger/OU=client/CN=spender::/C=US/ST=North Carolina/L=Durham/O=org1.example.com/CN=ca.org1.example.com"
-peer chaincode invoke "${TARGET_TLS_OPTIONS[@]}" -C mychannel -n token_erc20 -c '{"function":"Approve","Args":["'"$SPENDER"'", "500"]}'
+peer chaincode invoke $TARGET_TLS_OPTIONS -C mychannel -n token_erc20 -c '{"function":"Approve","Args":["'"$SPENDER"'", "500"]}'
 ```
 
 The approve function specified that the spender client can transfer 500 tokens on behalf of the minter. We can check the spender client's allowance from the minter by calling the `allowance` function.
@@ -345,13 +304,6 @@ Let's request the spender's allowance from the Org1 minter terminal.
 
 ```
 export MINTER="eDUwOTo6Q049bWludGVyLE9VPWNsaWVudCxPPUh5cGVybGVkZ2VyLFNUPU5vcnRoIENhcm9saW5hLEM9VVM6OkNOPWNhLm9yZzEuZXhhbXBsZS5jb20sTz1vcmcxLmV4YW1wbGUuY29tLEw9RHVyaGFtLFNUPU5vcnRoIENhcm9saW5hLEM9VVM="
-peer chaincode query -C mychannel -n token_erc20 -c '{"function":"Allowance","Args":["'"$MINTER"'", "'"$SPENDER"'"]}'
-```
-
-**For a Java Contract:**
-
-```
-export MINTER="x509::CN=minter, OU=client, O=Hyperledger, ST=North Carolina, C=US::CN=ca.org1.example.com, O=org1.example.com, L=Durham, ST=North Carolina, C=US"
 peer chaincode query -C mychannel -n token_erc20 -c '{"function":"Allowance","Args":["'"$MINTER"'", "'"$SPENDER"'"]}'
 ```
 
@@ -378,15 +330,7 @@ Back in the 3rd terminal, request the transfer of 100 tokens to the recipient ac
 ```
 export MINTER="eDUwOTo6Q049bWludGVyLE9VPWNsaWVudCxPPUh5cGVybGVkZ2VyLFNUPU5vcnRoIENhcm9saW5hLEM9VVM6OkNOPWNhLm9yZzEuZXhhbXBsZS5jb20sTz1vcmcxLmV4YW1wbGUuY29tLEw9RHVyaGFtLFNUPU5vcnRoIENhcm9saW5hLEM9VVM="
 export RECIPIENT="eDUwOTo6Q049cmVjaXBpZW50LE9VPWNsaWVudCxPPUh5cGVybGVkZ2VyLFNUPU5vcnRoIENhcm9saW5hLEM9VVM6OkNOPWNhLm9yZzIuZXhhbXBsZS5jb20sTz1vcmcyLmV4YW1wbGUuY29tLEw9SHVyc2xleSxTVD1IYW1wc2hpcmUsQz1VSw=="
-peer chaincode invoke "${TARGET_TLS_OPTIONS[@]}" -C mychannel -n token_erc20 -c '{"function":"TransferFrom","Args":[ "'"$MINTER"'", "'"$RECIPIENT"'", "100"]}'
-```
-
-**For a Java Contract:**
-
-```
-export MINTER="x509::CN=minter, OU=client, O=Hyperledger, ST=North Carolina, C=US::CN=ca.org1.example.com, O=org1.example.com, L=Durham, ST=North Carolina, C=US"
-export RECIPIENT="x509::CN=recipient, OU=client, O=Hyperledger, ST=North Carolina, C=US::CN=ca.org2.example.com, O=org2.example.com, L=Hursley, ST=Hampshire, C=UK"
-peer chaincode invoke "${TARGET_TLS_OPTIONS[@]}" -C mychannel -n token_erc20 -c '{"function":"TransferFrom","Args":[ "'"$MINTER"'", "'"$RECIPIENT"'", "100"]}'
+peer chaincode invoke $TARGET_TLS_OPTIONS -C mychannel -n token_erc20 -c '{"function":"TransferFrom","Args":[ "'"$MINTER"'", "'"$RECIPIENT"'", "100"]}'
 ```
 
 **For a JavaScript Contract:**
@@ -394,7 +338,7 @@ peer chaincode invoke "${TARGET_TLS_OPTIONS[@]}" -C mychannel -n token_erc20 -c 
 ```
 export MINTER="x509::/C=US/ST=North Carolina/O=Hyperledger/OU=client/CN=minter::/C=US/ST=North Carolina/L=Durham/O=org1.example.com/CN=ca.org1.example.com"
 export RECIPIENT="x509::/C=US/ST=North Carolina/O=Hyperledger/OU=client/CN=recipient::/C=UK/ST=Hampshire/L=Hursley/O=org2.example.com/CN=ca.org2.example.com"
-peer chaincode invoke "${TARGET_TLS_OPTIONS[@]}" -C mychannel -n token_erc20 -c '{"function":"TransferFrom","Args":[ "'"$MINTER"'", "'"$RECIPIENT"'", "100"]}'
+peer chaincode invoke $TARGET_TLS_OPTIONS -C mychannel -n token_erc20 -c '{"function":"TransferFrom","Args":[ "'"$MINTER"'", "'"$RECIPIENT"'", "100"]}'
 ```
 
 The `TransferFrom` function has three args: sender, recipient, amount. The function validates that the account associated with the sender has sufficient funds for the transfer. The function also validates if the allowance associated with the calling client ID exceeds funds to be transferred.
@@ -416,13 +360,6 @@ While still in the 3rd terminal for the spender, let's request the spender's all
 
 ```
 export SPENDER="eDUwOTo6Q049c3BlbmRlcixPVT1jbGllbnQsTz1IeXBlcmxlZGdlcixTVD1Ob3J0aCBDYXJvbGluYSxDPVVTOjpDTj1jYS5vcmcxLmV4YW1wbGUuY29tLE89b3JnMS5leGFtcGxlLmNvbSxMPUR1cmhhbSxTVD1Ob3J0aCBDYXJvbGluYSxDPVVT"
-peer chaincode query -C mychannel -n token_erc20 -c '{"function":"Allowance","Args":["'"$MINTER"'", "'"$SPENDER"'"]}'
-```
-
-**For a Java Contract:**
-
-```
-export SPENDER="x509::CN=spender, OU=client, O=Hyperledger, ST=North Carolina, C=US::CN=ca.org1.example.com, O=org1.example.com, L=Durham, ST=North Carolina, C=US"
 peer chaincode query -C mychannel -n token_erc20 -c '{"function":"Allowance","Args":["'"$MINTER"'", "'"$SPENDER"'"]}'
 ```
 

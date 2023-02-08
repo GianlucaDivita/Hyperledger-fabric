@@ -57,17 +57,17 @@ export FABRIC_CA_CLIENT_HOME=${PWD}/organizations/peerOrganizations/org1.example
 
 You can register a new minter client identity using the `fabric-ca-client` tool:
 ```
-fabric-ca-client register --caname ca-org1 --id.name minter --id.secret minterpw --id.type client --tls.certfiles "${PWD}/organizations/fabric-ca/org1/tls-cert.pem"
+fabric-ca-client register --caname ca-org1 --id.name minter --id.secret minterpw --id.type client --tls.certfiles ${PWD}/organizations/fabric-ca/org1/tls-cert.pem
 ```
 
 You can now generate the identity certificates and MSP folder by providing the enroll name and secret to the enroll command:
 ```
-fabric-ca-client enroll -u https://minter:minterpw@localhost:7054 --caname ca-org1 -M "${PWD}/organizations/peerOrganizations/org1.example.com/users/minter@org1.example.com/msp" --tls.certfiles "${PWD}/organizations/fabric-ca/org1/tls-cert.pem"
+fabric-ca-client enroll -u https://minter:minterpw@localhost:7054 --caname ca-org1 -M ${PWD}/organizations/peerOrganizations/org1.example.com/users/minter@org1.example.com/msp --tls.certfiles ${PWD}/organizations/fabric-ca/org1/tls-cert.pem
 ```
 
 Run the command below to copy the Node OU configuration file into the minter identity MSP folder.
 ```
-cp "${PWD}/organizations/peerOrganizations/org1.example.com/msp/config.yaml" "${PWD}/organizations/peerOrganizations/org1.example.com/users/minter@org1.example.com/msp/config.yaml"
+cp ${PWD}/organizations/peerOrganizations/org1.example.com/msp/config.yaml ${PWD}/organizations/peerOrganizations/org1.example.com/users/minter@org1.example.com/msp/config.yaml
 ```
 
 Open a new terminal to represent Org2 and navigate to fabric-samples/test-network. We'll use the Org2 CA to create the Org2 recipient identity. Set the Fabric CA client home to the MSP of the Org2 CA admin:
@@ -79,41 +79,22 @@ export FABRIC_CA_CLIENT_HOME=${PWD}/organizations/peerOrganizations/org2.example
 
 You can register a recipient client identity using the `fabric-ca-client` tool:
 ```
-fabric-ca-client register --caname ca-org2 --id.name recipient --id.secret recipientpw --id.type client --tls.certfiles "${PWD}/organizations/fabric-ca/org2/tls-cert.pem"
+fabric-ca-client register --caname ca-org2 --id.name recipient --id.secret recipientpw --id.type client --tls.certfiles ${PWD}/organizations/fabric-ca/org2/tls-cert.pem
 ```
 
 We can now enroll to generate the identity certificates and MSP folder:
 ```
-fabric-ca-client enroll -u https://recipient:recipientpw@localhost:8054 --caname ca-org2 -M "${PWD}/organizations/peerOrganizations/org2.example.com/users/recipient@org2.example.com/msp" --tls.certfiles "${PWD}/organizations/fabric-ca/org2/tls-cert.pem"
+fabric-ca-client enroll -u https://recipient:recipientpw@localhost:8054 --caname ca-org2 -M ${PWD}/organizations/peerOrganizations/org2.example.com/users/recipient@org2.example.com/msp --tls.certfiles ${PWD}/organizations/fabric-ca/org2/tls-cert.pem
 ```
 
 Run the command below to copy the Node OU configuration file into the recipient identity MSP folder.
 ```
-cp "${PWD}/organizations/peerOrganizations/org2.example.com/msp/config.yaml" "${PWD}/organizations/peerOrganizations/org2.example.com/users/recipient@org2.example.com/msp/config.yaml"
-```
-
-## Initialize the contract
-Once we created the identity of the minter we can now initialize the contract.
-Note that we need to call the initialize function before being able to use any functions of the contract. Initialize() can be called only once.
-
-Shift back to the Org1 terminal, we'll set the following environment variables to operate the `peer` CLI as the minter identity from Org1.
-```
-export CORE_PEER_TLS_ENABLED=true
-export CORE_PEER_LOCALMSPID="Org1MSP"
-export CORE_PEER_MSPCONFIGPATH=${PWD}/organizations/peerOrganizations/org1.example.com/users/minter@org1.example.com/msp
-export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
-export CORE_PEER_ADDRESS=localhost:7051
-export TARGET_TLS_OPTIONS=(-o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile "${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" --peerAddresses localhost:7051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt" --peerAddresses localhost:9051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt")
-```
-
-We can then invoke the smart contract to initilize it
-```
-peer chaincode invoke "${TARGET_TLS_OPTIONS[@]}" -C mychannel -n token_utxo -c '{"function":"Initialize","Args":["some name", "some symbol"]}'
+cp ${PWD}/organizations/peerOrganizations/org2.example.com/msp/config.yaml ${PWD}/organizations/peerOrganizations/org2.example.com/users/recipient@org2.example.com/msp/config.yaml
 ```
 
 ## Mint some tokens
 
-Now that we have initialized the contract and created the identity of the minter, we can invoke the smart contract to mint some tokens.
+Now that we have created the identity of the minter, we can invoke the smart contract to mint some tokens.
 Shift back to the Org1 terminal, we'll set the following environment variables to operate the `peer` CLI as the minter identity from Org1.
 ```
 export CORE_PEER_TLS_ENABLED=true
@@ -121,14 +102,14 @@ export CORE_PEER_LOCALMSPID="Org1MSP"
 export CORE_PEER_MSPCONFIGPATH=${PWD}/organizations/peerOrganizations/org1.example.com/users/minter@org1.example.com/msp
 export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
 export CORE_PEER_ADDRESS=localhost:7051
-export TARGET_TLS_OPTIONS=(-o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile "${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" --peerAddresses localhost:7051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt" --peerAddresses localhost:9051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt")
+export TARGET_TLS_OPTIONS="-o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile ${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem --peerAddresses localhost:7051 --tlsRootCertFiles ${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt --peerAddresses localhost:9051 --tlsRootCertFiles ${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt"
 ```
 
 The last environment variable above will be utilized within the CLI invoke commands to set the target peers for endorsement, and the target ordering service endpoint and TLS options.
 
 We can then invoke the smart contract to mint 5000 tokens:
 ```
-peer chaincode invoke "${TARGET_TLS_OPTIONS[@]}" -C mychannel -n token_utxo -c '{"function":"Mint","Args":["5000"]}'
+peer chaincode invoke $TARGET_TLS_OPTIONS -C mychannel -n token_utxo -c '{"function":"Mint","Args":["5000"]}'
 ```
 
 The mint function validated that the client is a member of the minter organization, and then created a UTXO with 5000 tokens belonging to the minter client identity.
@@ -190,7 +171,7 @@ x509::CN=recipient,OU=client,O=Hyperledger,ST=North Carolina,C=US::CN=ca.org2.ex
 After the Org2 recipient provides their client ID to the minter, the minter can initiate a transfer of tokens. We'll pass in the utxo_key of the UTXO with 5000 tokens to spend, and request that two new UTXOs get created, a UTXO with 100 tokens for the recipient, and a UTXO with 4900 tokens for the minter as the 'change'. Since the contract will create the UTXO output keys, we'll initially leave the output keys blank.
 Back in the Org1 terminal, request the UTXO transfer. **Replace YOUR_UTXO_KEY below with the key you saved earlier**:
 ```
-peer chaincode invoke "${TARGET_TLS_OPTIONS[@]}" -C mychannel -n token_utxo -c '{"function":"Transfer","Args":["[\"YOUR_UTXO_KEY\"]"," [{\"utxo_key\":\"\",\"owner\":\"eDUwOTo6Q049cmVjaXBpZW50LE9VPWNsaWVudCxPPUh5cGVybGVkZ2VyLFNUPU5vcnRoIENhcm9saW5hLEM9VVM6OkNOPWNhLm9yZzIuZXhhbXBsZS5jb20sTz1vcmcyLmV4YW1wbGUuY29tLEw9SHVyc2xleSxTVD1IYW1wc2hpcmUsQz1VSw==\",\"amount\":100},{\"utxo_key\":\"\",\"owner\":\"eDUwOTo6Q049bWludGVyLE9VPWNsaWVudCxPPUh5cGVybGVkZ2VyLFNUPU5vcnRoIENhcm9saW5hLEM9VVM6OkNOPWNhLm9yZzEuZXhhbXBsZS5jb20sTz1vcmcxLmV4YW1wbGUuY29tLEw9RHVyaGFtLFNUPU5vcnRoIENhcm9saW5hLEM9VVM=\",\"amount\":4900}]"]}'
+peer chaincode invoke $TARGET_TLS_OPTIONS -C mychannel -n token_utxo -c '{"function":"Transfer","Args":["[\"YOUR_UTXO_KEY\"]"," [{\"utxo_key\":\"\",\"owner\":\"eDUwOTo6Q049cmVjaXBpZW50LE9VPWNsaWVudCxPPUh5cGVybGVkZ2VyLFNUPU5vcnRoIENhcm9saW5hLEM9VVM6OkNOPWNhLm9yZzIuZXhhbXBsZS5jb20sTz1vcmcyLmV4YW1wbGUuY29tLEw9SHVyc2xleSxTVD1IYW1wc2hpcmUsQz1VSw==\",\"amount\":100},{\"utxo_key\":\"\",\"owner\":\"eDUwOTo6Q049bWludGVyLE9VPWNsaWVudCxPPUh5cGVybGVkZ2VyLFNUPU5vcnRoIENhcm9saW5hLEM9VVM6OkNOPWNhLm9yZzEuZXhhbXBsZS5jb20sTz1vcmcxLmV4YW1wbGUuY29tLEw9RHVyaGFtLFNUPU5vcnRoIENhcm9saW5hLEM9VVM=\",\"amount\":4900}]"]}'
 ```
 
 The `Transfer` function verifies that the calling client owns the input UTXO, and that the sum of the input amounts equals the sum of the output amounts. It will then delete (spend) the input UTXO, and create the two output UTXOs. If you passed the incorrect UTXO input key, or requested UTXO output values that don't total 5000, you'll get an error indicating as such.

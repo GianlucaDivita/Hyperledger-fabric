@@ -27,12 +27,13 @@ export VERBOSE=false
 # Print the usage message
 function printHelp() {
   echo "Usage: "
-  echo "  start_network.sh <mode> [-t <timeout>] [-v]"
+  echo "  start_network.sh <mode> [-t <timeout>] [-i <imagetag>] [-v]"
   echo "    <mode> - one of 'up', 'down' or 'generate'"
   echo "      - 'up' - bring up the network with docker-compose up"
   echo "      - 'down' - clear the network with docker-compose down"
   echo "      - 'generate' - generate required certificates and genesis block"
   echo "    -t <timeout> - CLI timeout duration in seconds (defaults to 10)"
+  echo "    -i <imagetag> - the tag to be used to launch the network (defaults to \"latest\")"
   echo "    -v - verbose mode"
   echo
   echo "Typically, one would first generate the required certificates and "
@@ -72,7 +73,7 @@ function checkPrereqs() {
   # Note, we check configtxlator externally because it does not require a config file, and peer in the
   # docker image because of FAB-8551 that makes configtxlator return 'development version' in docker
   LOCAL_VERSION=$(configtxgen -version | sed -ne 's/ Version: //p')
-  DOCKER_IMAGE_VERSION=$(docker run --rm hyperledger/fabric-tools:latest peer version | sed -ne 's/ Version: //p' | head -1)
+  DOCKER_IMAGE_VERSION=$(docker run --rm hyperledger/fabric-tools:$IMAGETAG peer version | sed -ne 's/ Version: //p' | head -1)
 
   echo "LOCAL_VERSION=$LOCAL_VERSION"
   echo "DOCKER_IMAGE_VERSION=$DOCKER_IMAGE_VERSION"
@@ -107,7 +108,7 @@ function networkUp() {
     generateCerts
     generateChannelArtifacts
   fi
-  docker-compose -f $COMPOSE_FILE up -d orderer partya partyb partyc auditor rrprovider cli 2>&1
+  IMAGE_TAG=$IMAGETAG docker-compose -f $COMPOSE_FILE up -d orderer partya partyb partyc auditor rrprovider cli 2>&1
   if [ $? -ne 0 ]; then
     echo "ERROR !!!! Unable to start network"
     exit 1
@@ -132,7 +133,7 @@ function networkDown() {
 
   # Bring down the network, deleting the volumes
   #Delete any ledger backups
-  docker run -v "$PWD:/tmp/first-network" --rm hyperledger/fabric-tools:latest rm -Rf /tmp/first-network/ledgers-backup
+  docker run -v $PWD:/tmp/first-network --rm hyperledger/fabric-tools:$IMAGETAG rm -Rf /tmp/first-network/ledgers-backup
   #Cleanup the chaincode containers
   clearContainers
   #Cleanup images
@@ -190,6 +191,10 @@ function generateChannelArtifacts() {
 
 CHANNEL_NAME="irs"
 COMPOSE_FILE=docker-compose.yaml
+COMPOSE_PROJECT_NAME=fabric-irs
+#
+# default image tag
+IMAGETAG="latest"
 # Parse commandline args
 MODE=$1
 shift
@@ -209,6 +214,9 @@ while getopts "t:i:v" opt; do
   case "$opt" in
   t)
     CLI_TIMEOUT=$OPTARG
+    ;;
+  i)
+    IMAGETAG=$(go env GOARCH)"-"$OPTARG
     ;;
   v)
     VERBOSE=true
